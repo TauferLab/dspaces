@@ -10,9 +10,11 @@ set (dspaces-pkg "share/cmake/dspaces")
 set (dspaces-vers "${dspaces_VERSION_MAJOR}.${dspaces_VERSION_MINOR}")
 
 add_library(dspaces ${dspaces-src})
-target_link_libraries (dspaces margo m pthread)
+# MPI_C_LIBRARIES added by ilumsden
+target_link_libraries (dspaces margo m pthread ${MPI_C_LIBRARIES})
 target_include_directories (dspaces PUBLIC $<INSTALL_INTERFACE:include>)
-
+# MPI_C_INCLUDE_PATH added by ilumsden
+target_include_directories (dspaces PUBLIC ${MPI_C_INCLUDE_PATH})
 # local include's BEFORE, in case old incompatable .h files in prefix/include
 target_include_directories (dspaces BEFORE PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
@@ -25,10 +27,13 @@ set_target_properties (dspaces
 set(dspaces-server-src util.c bbox.c ss_data.c dspaces-server.c)
 
 add_library(dspaces-server ${dspaces-server-src})
-target_link_libraries (dspaces-server margo m pthread)
+# MPI_C_INCLUDE_PATH added by ilumsden
+target_link_libraries (dspaces-server margo m pthread ${MPI_C_LIBRARIES})
 
 target_include_directories (dspaces-server BEFORE PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+# MPI_C_INCLUDE_PATH added by ilumsden
+target_include_directories (dspaces-server PUBLIC ${MPI_C_INCLUDE_PATH})
 
 # for shared libs, establish the lib version
 set_target_properties (dspaces-server
