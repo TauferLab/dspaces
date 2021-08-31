@@ -68,7 +68,8 @@ endif()
 
 add_subdirectory(src)
 add_subdirectory(include)
-add_subdirectory(bindings)
+# ilumsden: Don't need bindings for A4X
+# add_subdirectory(bindings)
 if(${ENABLE_TESTS})
   enable_testing()
   add_subdirectory(tests)
