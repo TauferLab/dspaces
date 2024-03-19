@@ -4,6 +4,8 @@
  *
  * See COPYRIGHT in top-level directory.
  */
+
+#include <clock.h>
 #include "dspaces.h"
 #include "dspacesp.h"
 #include "gspace.h"
@@ -1451,6 +1453,19 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     int i;
     int ret = dspaces_SUCCESS;
 
+    struct timespec timer_data;
+    long mdata_start_ns = -1;
+    long mdata_stop_ns = -1;
+    long data_start_ns = -1;
+    long data_stop_ns = -1;
+    int rc = 0;
+
+    rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
+    if (rc != 0) {
+        fprintf(stderr, "Could not get start time for metadata operation\n");
+    } else {
+        mdata_start_ns = timer_data.tv_nsec;
+    }
     fill_odsc(var_name, ver, 0, ndim, lb, ub, &odsc);
 
     num_odscs = get_odscs(client, &odsc, timeout, &odsc_tab);
@@ -1459,7 +1474,19 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     for(int i = 0; i < num_odscs; ++i) {
         DEBUG_OUT("%s\n", obj_desc_sprint(&odsc_tab[i]));
     }
+    rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
+    if (rc != 0) {
+        fprintf(stderr, "Could not get stop time for metadata operation\n");
+    } else {
+        mdata_stop_ns = timer_data.tv_nsec;
+    }
 
+    rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
+    if (rc != 0) {
+        fprintf(stderr, "Could not get start time for data operation\n");
+    } else {
+        data_start_ns = timer_data.tv_nsec;
+    }
     // send request to get the obj_desc
     if(num_odscs != 0)
         elem_size = odsc_tab[0].size;
@@ -1470,6 +1497,20 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     DEBUG_OUT("data buffer size is %d\n", num_elem * elem_size);
     *data = malloc(num_elem * elem_size);
     get_data(client, num_odscs, odsc, odsc_tab, *data);
+    rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
+    if (rc != 0) {
+        fprintf(stderr, "Could not get stop time for data operation\n");
+    } else {
+        data_stop_ns = timer_data.tv_nsec;
+    }
+
+    if (mdata_start_ns <= 0 || mdata_stop_ns <= 0 || data_start_ns <= 0 || data_stop_ns <= 0) {
+        fprintf(stderr, "Could not write timing data to stdout\n");
+    } else {
+        printf("%s,%u,%ld,%ld\n", var_name, ver,
+               (mdata_stop_ns - mdata_start_ns),
+               (data_stop_ns - data_start_ns));
+    }
 
     return ret;
 }
