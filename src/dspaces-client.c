@@ -1507,7 +1507,7 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     if (mdata_start_ns <= 0 || mdata_stop_ns <= 0 || data_start_ns <= 0 || data_stop_ns <= 0) {
         fprintf(stderr, "Could not write timing data to stdout\n");
     } else {
-        printf("%s,%u,%ld,%ld\n", var_name, ver,
+        printf("%d,%s,%u,%ld,%ld\n", client.rank, var_name, ver,
                (mdata_stop_ns - mdata_start_ns),
                (data_stop_ns - data_start_ns));
     }
