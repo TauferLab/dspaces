@@ -166,8 +166,9 @@ static int couple_read_nd(dspaces_client_t client, unsigned int ts,
     for(i = 0; i < num_vars; i++) {
         sprintf(var_name, "mnd_%d", i);
         if(allocate) {
+            long long int mdata_time_ns, data_time_ns;
             err = dspaces_aget(client, var_name, ts, dims, lb, ub,
-                               (void **)&data_tab[i], -1);
+                               (void **)&data_tab[i], -1, &mdata_time_ns, &data_time_ns);
         } else {
             err = dspaces_get(client, var_name, ts, elem_size, dims, lb, ub,
                               data_tab[i], -1);

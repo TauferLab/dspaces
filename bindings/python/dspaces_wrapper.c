@@ -86,7 +86,7 @@ PyObject *wrapper_dspaces_get(PyObject *clientppy, const char *name,
         dims[i] = (ub[i] - lb[i]) + 1;
     }
 
-    dspaces_aget(*clientp, name, version, ndim, lb, ub, &data, timeout);
+    dspaces_aget(*clientp, name, version, ndim, lb, ub, &data, timeout, NULL, NULL);
 
     arr = PyArray_NewFromDescr(&PyArray_Type, descr, ndim, dims, NULL, data, 0,
                                NULL);

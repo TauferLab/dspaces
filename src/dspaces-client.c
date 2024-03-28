@@ -5,7 +5,7 @@
  * See COPYRIGHT in top-level directory.
  */
 
-#include <clock.h>
+#include <time.h>
 #include "dspaces.h"
 #include "dspacesp.h"
 #include "gspace.h"
@@ -1441,9 +1441,11 @@ static void fill_odsc(const char *var_name, unsigned int ver, int elem_size,
     odsc->name[sizeof(odsc->name) - 1] = '\0';
 }
 
+#define TIMESPEC_TO_NS(timespec) (timespec.tv_sec * 1000000000 + timespec.tv_nsec)
+
 int dspaces_aget(dspaces_client_t client, const char *var_name,
                  unsigned int ver, int ndim, uint64_t *lb, uint64_t *ub,
-                 void **data, int timeout)
+                 void **data, int timeout, long long int* mdata_time_ns, long long int* data_time_ns)
 {
     obj_descriptor odsc;
     obj_descriptor *odsc_tab;
@@ -1454,18 +1456,19 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     int ret = dspaces_SUCCESS;
 
     struct timespec timer_data;
-    long mdata_start_ns = -1;
-    long mdata_stop_ns = -1;
-    long data_start_ns = -1;
-    long data_stop_ns = -1;
+    long long int mdata_start_ns = -1;
+    long long int mdata_stop_ns = -1;
+    long long int data_start_ns = -1;
+    long long int data_stop_ns = -1;
     int rc = 0;
 
     rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
     if (rc != 0) {
         fprintf(stderr, "Could not get start time for metadata operation\n");
     } else {
-        mdata_start_ns = timer_data.tv_nsec;
+        mdata_start_ns = TIMESPEC_TO_NS(timer_data);
     }
+
     fill_odsc(var_name, ver, 0, ndim, lb, ub, &odsc);
 
     num_odscs = get_odscs(client, &odsc, timeout, &odsc_tab);
@@ -1474,19 +1477,21 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     for(int i = 0; i < num_odscs; ++i) {
         DEBUG_OUT("%s\n", obj_desc_sprint(&odsc_tab[i]));
     }
+
     rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
     if (rc != 0) {
         fprintf(stderr, "Could not get stop time for metadata operation\n");
     } else {
-        mdata_stop_ns = timer_data.tv_nsec;
+        mdata_stop_ns = TIMESPEC_TO_NS(timer_data);
     }
 
     rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
     if (rc != 0) {
         fprintf(stderr, "Could not get start time for data operation\n");
     } else {
-        data_start_ns = timer_data.tv_nsec;
+        data_start_ns = TIMESPEC_TO_NS(timer_data);
     }
+
     // send request to get the obj_desc
     if(num_odscs != 0)
         elem_size = odsc_tab[0].size;
@@ -1497,20 +1502,25 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
     DEBUG_OUT("data buffer size is %d\n", num_elem * elem_size);
     *data = malloc(num_elem * elem_size);
     get_data(client, num_odscs, odsc, odsc_tab, *data);
+
     rc = clock_gettime(CLOCK_MONOTONIC, &timer_data);
     if (rc != 0) {
         fprintf(stderr, "Could not get stop time for data operation\n");
     } else {
-        data_stop_ns = timer_data.tv_nsec;
+        data_stop_ns = TIMESPEC_TO_NS(timer_data);
     }
 
-    if (mdata_start_ns <= 0 || mdata_stop_ns <= 0 || data_start_ns <= 0 || data_stop_ns <= 0) {
-        fprintf(stderr, "Could not write timing data to stdout\n");
-    } else {
-        printf("%d,%s,%u,%ld,%ld\n", client.rank, var_name, ver,
-               (mdata_stop_ns - mdata_start_ns),
-               (data_stop_ns - data_start_ns));
-    }
+    *mdata_time_ns = mdata_stop_ns - mdata_start_ns;
+    *data_time_ns = data_stop_ns - data_start_ns;
+
+    // if (mdata_start_ns <= 0 || mdata_stop_ns <= 0 || data_start_ns <= 0 || data_stop_ns <= 0) {
+    //     fprintf(stderr, "Could not write timing data to stdout\n");
+    // } else {
+    //     printf("%d,%s,%u,%lld,%lld,%lld\n", client->rank, var_name, ver,
+    //            num_elem*elem_size,
+    //            (mdata_stop_ns - mdata_start_ns),
+    //            (data_stop_ns - data_start_ns));
+    // }
 
     return ret;
 }

@@ -248,7 +248,7 @@ int dspaces_get(dspaces_client_t client, const char *var_name, unsigned int ver,
  */
 int dspaces_aget(dspaces_client_t client, const char *var_name,
                  unsigned int ver, int ndim, uint64_t *lb, uint64_t *ub,
-                 void **data, int timeout);
+                 void **data, int timeout, long long int* mdata_time_ns, long long int* data_time_ns);
 
 struct dspaces_req {
     char *var_name;
