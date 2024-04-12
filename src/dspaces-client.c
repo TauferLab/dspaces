@@ -1510,8 +1510,12 @@ int dspaces_aget(dspaces_client_t client, const char *var_name,
         data_stop_ns = TIMESPEC_TO_NS(timer_data);
     }
 
-    *mdata_time_ns = mdata_stop_ns - mdata_start_ns;
-    *data_time_ns = data_stop_ns - data_start_ns;
+    if (mdata_time_ns != NULL) {
+        *mdata_time_ns = mdata_stop_ns - mdata_start_ns;
+    }
+    if (data_time_ns != NULL) {
+        *data_time_ns = data_stop_ns - data_start_ns;
+    }
 
     // if (mdata_start_ns <= 0 || mdata_stop_ns <= 0 || data_start_ns <= 0 || data_stop_ns <= 0) {
     //     fprintf(stderr, "Could not write timing data to stdout\n");

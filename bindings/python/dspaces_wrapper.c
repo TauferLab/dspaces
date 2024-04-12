@@ -63,6 +63,18 @@ void wrapper_dspaces_put(PyObject *clientppy, PyObject *obj, const char *name,
     return;
 }
 
+// Based on code from:
+// https://stackoverflow.com/a/52737023
+void free_aget_memory(PyObject* capsule)
+{
+    if (capsule) {
+        void* data = PyCapsule_GetPointer(capsule, NULL);
+        if (data) {
+            free(data);
+        }
+    }
+}
+
 PyObject *wrapper_dspaces_get(PyObject *clientppy, const char *name,
                               int version, PyObject *lbt, PyObject *ubt,
                               PyObject *dtype, int timeout)
@@ -90,6 +102,10 @@ PyObject *wrapper_dspaces_get(PyObject *clientppy, const char *name,
 
     arr = PyArray_NewFromDescr(&PyArray_Type, descr, ndim, dims, NULL, data, 0,
                                NULL);
+    // Based on code from:
+    // https://stackoverflow.com/a/52737023
+    PyObject* capsule = PyCapsule_New(data, NULL, free_aget_memory);
+    PyArray_SetBaseObject((PyArrayObject*) arr, capsule);
 
     return (arr);
 }
